@@ -26,7 +26,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:srcCompat="@drawable/bar" />
 
-    <ScrollView
+    <com.example.a84353.mylauncher.MyScrollView
         android:id="@+id/plane"
         android:layout_width="0dp"
         android:layout_height="match_parent"
@@ -42,7 +42,7 @@
             android:layout_height="wrap_content">
 
         </LinearLayout>
-    </ScrollView>
+    </com.example.a84353.mylauncher.MyScrollView>
 
 
 </android.support.constraint.ConstraintLayout>

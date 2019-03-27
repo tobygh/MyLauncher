@@ -57,15 +57,15 @@ public class MainActivity extends AppCompatActivity {
     Timer theTimer;
     Handler theHandler;
     ImageView iv_slideBar,iv_background;
-    ScrollView iv_plane;
+    MyScrollView iv_plane;
     LinearLayout tl_iconTable;
 
     static int num_per_row=5;
     static int name_length=10;
     private static List<List> partApps;
     final int iconSize=150;
-
-    private class MyApplicaiton{
+    LauncherContentHandler handler;
+    /*private class MyApplicaiton{
         ResolveInfo resInfo;
         char firstChar;
         String name;
@@ -79,12 +79,8 @@ public class MainActivity extends AppCompatActivity {
             if (name.length()>15)name=name.substring(0,15);
             firstChar=name.charAt(0);
             pkgName=r0.activityInfo.packageName;
-            //String pkg=r0.activityInfo.packageName;
-            //String cls=r0.activityInfo.name;
-            //r0.serviceInfo.name;
-            //compName=new ComponentName(pkg,cls);
         }
-    }
+    }*/
     private class HomeReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent){
@@ -100,14 +96,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     private class ApkReceiver extends BroadcastReceiver {
+        boolean isUpdatable=true;
         @Override
         public void onReceive(Context context, Intent intent){
-            //if (intent.getAction().equals(Intent.ACTION_PACKAGE_ADDED)){
                 Log.i("debug",intent.getAction()+intent.getData().getSchemeSpecificPart());
-
-            //}
             if (intent.getPackage()==getPackageName()) return ;
-
+            /*if (isUpdatable==false)return;
+            isUpdatable=false;
             tl_iconTable.removeAllViews();
             TimerTask fillTask=new TimerTask() {
                 @Override
@@ -116,11 +111,14 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             fillPlane();
+                            isUpdatable=true;
                         }
                     });
+
                 }
             };
-            theTimer.schedule(fillTask,1000);
+            theTimer.schedule(fillTask,1000);*/
+            handler.update();
            // iv_plane.invalidate();
         }
     }
@@ -174,7 +172,11 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
-        fillPlane();
+        handler=new LauncherContentHandler(iv_background,tl_iconTable,getWindowManager(),WallpaperManager.getInstance(MainActivity.this)
+        ,getPackageManager(),getResources(),MainActivity.this);
+        iv_plane.setController(new DragAtBorderController(iv_plane,handler));
+        handler.fillPlane();
+        //fillPlane();
         //startService(new Intent(MainActivity.this,));
     }
     private void regComp(){
@@ -186,6 +188,7 @@ public class MainActivity extends AppCompatActivity {
         iv_background=findViewById(R.id.background);
     }
 
+/*
     private LinearLayout generateLinear(MyApplicaiton appInfo){
         ImageView iv=new ImageView(MainActivity.this);
         RelativeLayout.LayoutParams rllp=new RelativeLayout.LayoutParams(iconSize,iconSize);
@@ -193,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
         rllp.setMargins(0,0,0,10);
         iv.setLayoutParams(rllp);
         MyClickListener cl=new MyClickListener(appInfo.pkgName);
-        MyHodeListener hl=new MyHodeListener(appInfo.pkgName);
+        MyHoldListener hl=new MyHoldListener(appInfo.pkgName);
         iv.setImageDrawable(appInfo.resInfo.loadIcon(getPackageManager()));
         iv.setOnClickListener(cl);
         iv.setOnLongClickListener(hl);
@@ -232,19 +235,7 @@ public class MainActivity extends AppCompatActivity {
         rllp.setMargins(10,20,10,20);
 
 
-        /*ImageView iv;
-        MyClickListener tl;
-        MyHodeListener hl;*/
-
         for (int j=0;!listApp.isEmpty()&&j<listApp.size();j++){
-            /*
-            iv=new ImageView(MainActivity.this);
-            iv.setImageDrawable(listApp.get(j).resInfo.loadIcon(getPackageManager()));
-            iv.setLayoutParams(rllp);
-            tl=new MyClickListener(listApp.get(j).pkgName);
-            hl=new MyHodeListener(listApp.get(j).pkgName);
-            iv.setOnClickListener(tl);
-            iv.setOnLongClickListener(hl);*/
             gl.addView(generateLinear(listApp.get(j)));
         }
 
@@ -252,9 +243,9 @@ public class MainActivity extends AppCompatActivity {
         return gl;
     }
 
-    private class MyHodeListener implements View.OnLongClickListener{
+    private class MyHoldListener implements View.OnLongClickListener{
         String pkgName;
-        MyHodeListener(String name){
+        MyHoldListener(String name){
             pkgName=name;
         }
         @Override
@@ -376,5 +367,5 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
-
+*/
 }
