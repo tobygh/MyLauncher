@@ -20,15 +20,10 @@ public class MyScrollView extends ScrollView {
     }
     public MyScrollView(Context context, AttributeSet atts){
         super(context,atts);
-        //setOverScrollMode(ListView.OVER_SCROLL_NEVER);
     }
     @Override
     protected void onFinishInflate(){
         super.onFinishInflate();
-        /*if (getChildCount()>0){
-            View v=getChildAt(0);
-            controller=new DragAtBorderController(v);
-        }*/
     }
     public void setController(DragAtBorderController dc){
         controller=dc;
@@ -57,6 +52,4 @@ public class MyScrollView extends ScrollView {
         }
     }
 
-
-    //public
 }

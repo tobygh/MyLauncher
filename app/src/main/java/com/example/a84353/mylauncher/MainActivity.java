@@ -47,6 +47,7 @@ import com.github.promeg.pinyinhelper.Pinyin;
 import org.w3c.dom.Text;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -57,9 +58,10 @@ public class MainActivity extends AppCompatActivity {
     Timer theTimer;
     Handler theHandler;
     ImageView iv_slideBar,iv_background;
+    TextView tv_clock;
     MyScrollView iv_plane;
     LinearLayout tl_iconTable;
-
+    Calendar cal;
     static int num_per_row=5;
     static int name_length=10;
     private static List<List> partApps;
@@ -164,11 +166,21 @@ public class MainActivity extends AppCompatActivity {
                 Log.i("debug","H"+iv_slideBar.getHeight()+" Y"+event.getY()+" R"+selected);
                 if (selected>26)selected=26;
                 if (selected<0)selected=0;
-                selected=getResources().getIdentifier("table_row_"+selected,"id",getPackageName());
+                //selected=getResources().getIdentifier("table_row_"+selected,"id",getPackageName());
 
-                View gl=findViewById(selected);
-                if(gl!=null)
-                    iv_plane.smoothScrollTo(0,(int)gl.getY());
+                //View gl=findViewById(selected);
+                View gl=tl_iconTable.getChildAt(selected);
+                if(gl!=null){
+                    //scroll to center
+                    int sy=Math.round(gl.getY()-iv_plane.getHeight()/2+gl.getHeight()/2);
+                    iv_plane.smoothScrollTo(0,sy);
+                    Log.i("debug",
+                            "glY"+gl.getY()+
+                            "glH"+gl.getHeight()+
+                            "planeH"+iv_plane.getHeight());
+                }
+
+
                 return true;
             }
         });
@@ -178,6 +190,21 @@ public class MainActivity extends AppCompatActivity {
         handler.fillPlane();
         //fillPlane();
         //startService(new Intent(MainActivity.this,));
+        TimerTask clock=new TimerTask() {
+            @Override
+            public void run() {
+                cal=Calendar.getInstance();
+                String str=""+
+                        cal.get(Calendar.YEAR)+"/"+
+                        (int)(cal.get(Calendar.MONTH)+1)+"/"+
+                        cal.get(Calendar.DAY_OF_MONTH)+"\n"+
+                        cal.get(Calendar.HOUR_OF_DAY)+":"+
+                        cal.get(Calendar.MINUTE);
+                tv_clock.setText(str);
+
+            }
+        };
+        theTimer.scheduleAtFixedRate(clock,10,20000);
     }
     private void regComp(){
         iv_slideBar=findViewById(R.id.slideBar);
@@ -186,6 +213,7 @@ public class MainActivity extends AppCompatActivity {
         theTimer=new Timer();
         theHandler=new Handler();
         iv_background=findViewById(R.id.background);
+        tv_clock=findViewById(R.id.easyTime);
     }
 
 /*

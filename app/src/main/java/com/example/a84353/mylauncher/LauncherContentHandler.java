@@ -160,7 +160,6 @@ public class LauncherContentHandler {
             int idd=resources.getIdentifier("table_row_"+i,"id",context.getPackageName());
             ll.setId(idd);
             ll_iconTable.addView(ll);
-            Toast.makeText(context,"latest",Toast.LENGTH_SHORT);
         }
     }
     private LinearLayout generateLinear(MyApplication appInfo){
