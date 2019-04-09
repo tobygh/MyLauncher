@@ -17,6 +17,7 @@ import android.graphics.drawable.ClipDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
+import android.os.BatteryManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.provider.Settings;
@@ -58,31 +59,18 @@ public class MainActivity extends AppCompatActivity {
     Timer theTimer;
     Handler theHandler;
     ImageView iv_slideBar,iv_background;
+    ConstraintLayout cs_battery;
     TextView tv_clock;
     MyScrollView iv_plane;
     LinearLayout tl_iconTable;
+
     Calendar cal;
+    View lastGl;
     static int num_per_row=5;
     static int name_length=10;
     private static List<List> partApps;
     final int iconSize=150;
     LauncherContentHandler handler;
-    /*private class MyApplicaiton{
-        ResolveInfo resInfo;
-        char firstChar;
-        String name;
-        String pkgName;
-        //ComponentName compName;
-        int id;
-        MyApplicaiton(ResolveInfo r0,int _id){
-            id=_id;
-            resInfo=r0;
-            name=ZhToPin(r0.loadLabel(getPackageManager()).toString());
-            if (name.length()>15)name=name.substring(0,15);
-            firstChar=name.charAt(0);
-            pkgName=r0.activityInfo.packageName;
-        }
-    }*/
     private class HomeReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent){
@@ -124,7 +112,20 @@ public class MainActivity extends AppCompatActivity {
            // iv_plane.invalidate();
         }
     }
+    private class BatteryReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context,Intent intent){
+            int current=intent.getExtras().getInt("level");
+            int total=intent.getExtras().getInt("scale");
+            double ratio=1.0-1.0*current/total;
+            double offset=cs_battery.getWidth()*ratio;
+            cs_battery.setPadding(0,0,(int)offset,0);
+
+        }
+    }
     HomeReceiver hr;
+    ApkReceiver ar;
+    BatteryReceiver br;
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event){
         if (keyCode==KeyEvent.KEYCODE_BACK){
@@ -139,6 +140,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy(){
         super.onDestroy();
         unregisterReceiver(hr);
+        unregisterReceiver(ar);
+        unregisterReceiver(br);
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,33 +150,69 @@ public class MainActivity extends AppCompatActivity {
         hr = new HomeReceiver();
         IntentFilter homeFilter=new IntentFilter(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
         registerReceiver(hr,homeFilter);
-        ApkReceiver ar=new ApkReceiver();
+        ar=new ApkReceiver();
         IntentFilter apkFilter=new IntentFilter();
         apkFilter.addAction("android.intent.action.PACKAGE_ADDED");
         apkFilter.addAction("android.intent.action.PACKAGE_REMOVED");
         apkFilter.addDataScheme("package");
         registerReceiver(ar,apkFilter);
+        br=new BatteryReceiver();
+        IntentFilter batteryFilter=new IntentFilter();
+        batteryFilter.addAction("android.intent.action.BATTERY_CHANGED");
+        registerReceiver(br,batteryFilter);
 
         if (getSupportActionBar() != null)getSupportActionBar().hide();
         regComp();
-        //startY=new int[30];
+
+
+        TimerTask getBattery=new TimerTask() {
+            @Override
+            public void run() {
+                theHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        BatteryManager bmg=(BatteryManager)getSystemService(BATTERY_SERVICE);
+                        int left=bmg.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+                        float offset=(100-left)/100f*cs_battery.getWidth();
+                        Log.i("debug","left "+left);
+                        cs_battery.setPadding(0,0,0+(int)offset,0);
+                    }
+                });
+            }
+        };
+        theTimer.schedule(getBattery,1000);
+
         iv_slideBar.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 Log.i("debug",event.getX()+","+event.getY());
-                int scY=0;
                 int selected=(int)Math.round(event.getY()*27.0/iv_slideBar.getHeight()-0.5);
                 Log.i("debug","H"+iv_slideBar.getHeight()+" Y"+event.getY()+" R"+selected);
                 if (selected>26)selected=26;
-                if (selected<0)selected=0;
-                //selected=getResources().getIdentifier("table_row_"+selected,"id",getPackageName());
 
-                //View gl=findViewById(selected);
+                else if (selected<0)selected=0;
                 View gl=tl_iconTable.getChildAt(selected);
+
                 if(gl!=null){
-                    //scroll to center
-                    int sy=Math.round(gl.getY()-iv_plane.getHeight()/2+gl.getHeight()/2);
-                    iv_plane.smoothScrollTo(0,sy);
+                    //add border
+                    if (lastGl!=null)lastGl.setBackground(null);
+                    lastGl=gl;
+                    int action=event.getAction();
+                    if (action==MotionEvent.ACTION_DOWN||action==MotionEvent.ACTION_MOVE){
+                        gl.setBackgroundResource(R.drawable.border);
+                    }
+                    else if (event.getAction()==MotionEvent.ACTION_UP){
+                        gl.setBackground(null);
+                    }
+                    if (selected==0)iv_plane.smoothScrollTo(0,0);
+                    else if (selected==26)iv_plane.smoothScrollTo(0,tl_iconTable.getHeight());
+                    else{
+                    //scroll to center at finger
+                        float offset=iv_plane.getHeight()/2;
+                        offset=event.getY();
+                        int sy=Math.round(gl.getY()-offset+gl.getHeight()/2);
+                        iv_plane.smoothScrollTo(0,sy);
+                        }
                     Log.i("debug",
                             "glY"+gl.getY()+
                             "glH"+gl.getHeight()+
@@ -193,14 +232,22 @@ public class MainActivity extends AppCompatActivity {
         TimerTask clock=new TimerTask() {
             @Override
             public void run() {
-                cal=Calendar.getInstance();
-                String str=""+
-                        cal.get(Calendar.YEAR)+"/"+
-                        (int)(cal.get(Calendar.MONTH)+1)+"/"+
-                        cal.get(Calendar.DAY_OF_MONTH)+"\n"+
-                        cal.get(Calendar.HOUR_OF_DAY)+":"+
-                        cal.get(Calendar.MINUTE);
-                tv_clock.setText(str);
+                theHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cal=Calendar.getInstance();
+                        String str=""+
+                                cal.get(Calendar.YEAR)+"/"+
+                                (int)(cal.get(Calendar.MONTH)+1)+"/"+
+                                cal.get(Calendar.DAY_OF_MONTH)+"\n"+
+                                cal.get(Calendar.HOUR_OF_DAY)+":";
+                        int sec=cal.get(Calendar.MINUTE);
+                        if (sec<10)str+=("0"+sec);
+                        else str+=sec;
+                        tv_clock.setText(str);
+                    }
+                });
+
 
             }
         };
@@ -214,6 +261,8 @@ public class MainActivity extends AppCompatActivity {
         theHandler=new Handler();
         iv_background=findViewById(R.id.background);
         tv_clock=findViewById(R.id.easyTime);
+        //iv_leftBattery=findViewById(R.id.leftBattery);
+        cs_battery=findViewById(R.id.battery);
     }
 
 /*
@@ -242,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
         lllp.setMargins(10,0,10,20);
         ll.setLayoutParams(lllp);
         ll.setOrientation(LinearLayout.VERTICAL);
-        //ll.setBackground(getDrawable(R.drawable.block_background));
+        //ll.setBackground(getDrawable(R.drawable.border));
         ll.setGravity(Gravity.CENTER);
         //ll.setPadding(20,20,20,20);
         ll.addView(iv);

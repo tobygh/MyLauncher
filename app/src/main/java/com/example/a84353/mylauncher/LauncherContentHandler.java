@@ -44,6 +44,7 @@ public class LauncherContentHandler {
     Resources resources;
     Context context;
     boolean updatable;
+    boolean updateMetUpdate;
     final int name_length=10;
     final int iconSize=150;
     final int num_per_row=5;
@@ -60,10 +61,13 @@ public class LauncherContentHandler {
         updatable=true;
         theTimer = new Timer();
         theHandler=new Handler();
+        updateMetUpdate=false;
+        updatable=true;
     }
 
     void update(){
         if (updatable){
+            Log.i("debug","handle update");
             updatable=false;
             ll_iconTable.removeAllViews();
             TimerTask task=new TimerTask() {
@@ -74,11 +78,19 @@ public class LauncherContentHandler {
                         public void run() {
                             fillPlane();
                             updatable=true;
+                            if (updateMetUpdate){
+                                Log.i("debug","handle extra update");
+                                updateMetUpdate=false;
+                                update();
+                            }
                         }
                     });
                 }
             };
             theTimer.schedule(task,1000);
+        }
+        else{
+            updateMetUpdate=true;
         }
     }
     private List<List> loadApps(){

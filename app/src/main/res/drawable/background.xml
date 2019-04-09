@@ -8,12 +8,12 @@
         android:right="0dp"
         android:top="0dp"/>
     <corners
-        android:radius="10dp"/>
+        android:radius="0dp"/>
     <gradient
         android:angle="90"
-        android:endColor="#7EFFFFFF"
-        android:centerColor="#70D3D3D3"
-        android:startColor="#77BBBBBB"
+        android:endColor="#3BFFFFFF"
+        android:centerColor="#37D3D3D3"
+        android:startColor="#3CBBBBBB"
         />
     <stroke
         android:color="#8A0053A2"
